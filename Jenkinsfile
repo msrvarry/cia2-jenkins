@@ -43,16 +43,22 @@ pipeline {
             }
         }
 
-        stage('Deploy Container') {
-            steps {
-                echo 'Deploying container on EC2...'
-                sh '''
-                    docker ps -q --filter "name=my-sample-app" | grep -q . && docker stop my-sample-app && docker rm my-sample-app || true
-                    docker run -d -p 80:80 --name my-sample-app ${ECR_URI}:latest
-                '''
-            }
-        }
+stage('Deploy Container') {
+    steps {
+        echo "Deploying container on EC2..."
+        sh '''
+        # Stop and remove old container if it exists
+        if [ "$(docker ps -aq -f name=my-sample-app)" ]; then
+            echo "🧹 Removing old container..."
+            docker stop my-sample-app || true
+            docker rm my-sample-app || true
+        fi
+
+        # Run new container
+        docker run -d -p 80:80 --name my-sample-app 114593495110.dkr.ecr.us-east-1.amazonaws.com/my-sample-app:latest
+        '''
     }
+}
 
     post {
         success {
